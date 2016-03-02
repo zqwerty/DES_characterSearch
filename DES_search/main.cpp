@@ -10,16 +10,43 @@
 #include <string.h>
 using namespace std;
 
+#define rep(i,m,n)  for(int i=m;i<n;i++)
+#define LL  long long
+
+
 int XOR_Pair_Table[8][64][16]={0};
 
 int main(int argc, const char * argv[]) {
     freopen("/Users/zhuqi/Documents/Cryptanalysis/DES_search/DES_search/data.txt", "w", stdout);
     Create_XOR_Pair_Table();
-    for(int i=0;i<64;i++){
-        for(int j=0;j<16;j++){
-            cout<<XOR_Pair_Table[1][i][j]<<" ";
-        }
-        cout<<endl;
+    bit32 t;
+    int test[8] = {6,0,0,0,0,0,0,0};
+    rep(i,0,8){
+        t.data[i] = test[i];
     }
+    t.int2ch();
+    
+    bit32 t2;
+    int test2[8] = {0,0,8,0,8,2,0,0};
+    rep(i,0,8){
+        t2.data[i] = test2[i];
+    }
+    t2.int2ch();
+    
+    LL int ret = ProbabilityFromDeltaXToDeltaY(t, t2);
+    cout<<ret<<endl;
+    t.init();
+    ret = MaxProbabilityFromDeltaX(t);
+    cout<<ret<<endl;
+    
+    rep(i,0,32){
+        cout<<t.ch[i];
+    }
+    cout<<endl;
+    t.ch2int();
+    rep(i,0,8){
+        cout<<t.data[i]<<" ";
+    }
+
     return 0;
 }
