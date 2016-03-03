@@ -1,6 +1,6 @@
 #include "search.h"
 
-#define LL  long long
+using namespace std;
 
 /*S盒*/
 int S[8][4][16] =
@@ -63,7 +63,7 @@ int P_Table[32] = {
     1,7,23,13,31,26,2,8,
     18,12,29,5,21,10,3,24};
 
-extern int XOR_Pair_Table[8][64][16];
+int XOR_Pair_Table[8][64][16]={0};
 
 //计算S盒置换
 int Sbox(int S_order,int input){
@@ -96,7 +96,6 @@ void Create_XOR_Pair_Table(){
 bit32::bit32(){
     init();
 }
-
 void bit32::ch2int(){
     int ret=0;
     for(int i=0;i<8;i++){
@@ -107,7 +106,6 @@ void bit32::ch2int(){
         ret = 0;
     }
 }
-
 void bit32::int2ch(){
     for(int i=0;i<8;i++){
         for(int j=0;j<4;j++){
@@ -115,7 +113,6 @@ void bit32::int2ch(){
         }
     }
 }
-
 bool bit32::equal(bit32 obj){
     for(int i=0;i<8;i++){
         if(data[i]!=obj.data[i]){
@@ -124,25 +121,30 @@ bool bit32::equal(bit32 obj){
     }
     return true;
 }
-
 bool bit32::next(){
-    for(int i=7;i>=0;i--){
-        if(data[i]<16){
-            data[i]++;
-            int2ch();
-            return true;
+    int i=7;
+    while(i>=0){
+        data[i]++;
+        if(data[i]!=16){
+            break;
         }
+        else{
+            data[i]=0;
+            i--;
+        }
+    }
+    if(i>=0){
+        int2ch();
+        return true;
     }
     return false;
 }
-
 void bit32::init(){
     for(int i=0;i<8;i++){
         data[i] = 0;
     }
     int2ch();
 }
-
 bit32 bit32::XOR(bit32 obj){
     bit32 ret;
     ret.init();
@@ -152,7 +154,6 @@ bit32 bit32::XOR(bit32 obj){
     ret.int2ch();
     return ret;
 }
-
 void bit32::E_expansion(){
     char ret[48];
     for(int i=0;i<48;i++) {
@@ -167,9 +168,12 @@ void bit32::E_expansion(){
         tmp = 0;
     }
 }
+void bit32::output(){
+    printf("%s\n",ch);
+}
 
-//给定轮函数输入的ΔX，输出的ΔY，计算对应的概率。返回的是成功的次数，还需除以2^48(64^8)
-LL int ProbabilityFromDeltaXToDeltaY(bit32 deltaX,bit32 deltaY){
+//给定轮函数输入的ΔX，输出的ΔY，计算对应的概率。
+double ProbabilityFromDeltaXToDeltaY(bit32 deltaX,bit32 deltaY){
     //将ΔY逆置换P，得到ΔY_S
     bit32 deltaY_S;
     for(int i=0;i<32;i++) {
@@ -179,17 +183,19 @@ LL int ProbabilityFromDeltaXToDeltaY(bit32 deltaX,bit32 deltaY){
     //将ΔX进行E扩展，得到各Sbox输入的异或，以int[8]形式储存
     deltaX.E_expansion();
     //查找XOR_Pair_Table，将各S盒对应次数相乘
-    long long int cnt=1;
+    LL int cnt=1;
     for(int i=0;i<8;i++) {
         cnt *= XOR_Pair_Table[i][deltaX.data[i]][deltaY_S.data[i]];
     }
-    return cnt;
+    double ret = (double(cnt)/pow(2, 48));//(64^8)
+    return ret;
 }
 
-LL int MaxProbabilityFromDeltaX(bit32 deltaX){
+//给定轮函数输入的ΔX，计算最大的概率。
+double MaxProbabilityFromDeltaX(bit32 deltaX){
     //将ΔX进行E扩展，得到各Sbox输入的异或，以int[8]形式储存
     deltaX.E_expansion();
-    long long int cnt=1;
+    LL int cnt=1;
     for(int i=0;i<8;i++) {
         int max=0;
         for(int j=0;j<16;j++) {
@@ -199,12 +205,111 @@ LL int MaxProbabilityFromDeltaX(bit32 deltaX){
         }
         cnt *= max;
     }
-    return cnt;
+    double ret = (double(cnt)/pow(2, 48));
+    return ret;
+}
+//17=16+1
+double bn[17]={0.0};
+double p[17]={0.0};
+bit32 deltaX[17];
+bit32 deltaY[17];
+//B0、B1、B2=？
+
+
+
+//控制程序  roundcnt>=4 [1,16]
+void MAINprocedure(int totalRound){
+    Create_XOR_Pair_Table();
+    //计算B1
+//    bit32 deltaX;
+//    while (deltaX.next()) {
+//        double p1 = MaxProbabilityFromDeltaX(deltaX);
+//        if(p1>Bn[0]){
+//            Bn[0]=p1;
+//        }
+//    }
+//    for(int i=0;i<16;i++) {
+//        cout<<Bn[i]<<" ";
+//    }
+    /*******************/
+    bn[1] = 0.25;
+    bn[2] = 0.25;
+    bn[3] = 0.0625;
+//    bn[4] = 1.31/pow(2, 10);
+    bn[4] = 1;
+    /*******************/
+    //从四轮特征开始
+    for(int round=4;round<=totalRound;round++){
+        firstRound(round);
+        cout<<bn[round]<<endl;
+    }
+}
+//n round
+void firstRound(int n){
+    while (deltaX[1].next()) {
+        p[1] = MaxProbabilityFromDeltaX(deltaX[1]);
+        if (p[1] * bn[n-1] >= bn[n]) {
+            secondRound(n);
+        }
+        deltaX[1].output();
+    }
 }
 
-void MAINprocedure(){
-    
+void secondRound(int n){
+    while (deltaX[2].next()) {
+        while (deltaY[2].next()) {
+            p[2] = ProbabilityFromDeltaXToDeltaY(deltaX[2], deltaY[2]);
+            if(p[1] * p[2] * bn[n-2] >= bn[n]){
+                Round(3, n);
+            }
+        }
+    }
 }
+
+void Round(int i,int n){
+    deltaX[i] = deltaX[i-2].XOR(deltaY[i-1]);
+    while (deltaY[i].next()) {
+        p[i] = ProbabilityFromDeltaXToDeltaY(deltaX[i], deltaY[i]);
+        double product = 1;
+        for(int cnt = 1;cnt<=i;cnt++){
+            product *= p[cnt];
+        }
+        if (product * bn[n-i] >= bn[n]) {
+            if(i==n-1){
+                lastRound(n);
+            }
+            else{
+                Round(i+1, n);
+            }
+        }
+    }
+}
+
+void lastRound(int n){
+    deltaX[n] = deltaX[n-2].XOR(deltaY[n-1]);
+    p[n] = MaxProbabilityFromDeltaX(deltaX[n]);
+    double product = 1;
+    for(int cnt = 1;cnt<=n;cnt++) {
+        product *= p[cnt];
+    }
+    if (product >= bn[n]) {
+        bn[n] = product;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

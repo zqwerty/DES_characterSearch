@@ -10,6 +10,8 @@
 #ifndef DES_search_search_h
 #define DES_search_search_h
 
+#include <math.h>
+#include <iostream>
 #define LL  long long
 
 //计算S盒置换 S_order=[0,7],input=[0,63]
@@ -29,16 +31,25 @@ struct bit32{
     bit32 XOR(bit32);
     void E_expansion();//只改变data不改变ch
     bit32();
+    void output();
 };
 
 
 
-//给定轮函数输入的ΔX，输出的ΔY，计算对应的概率。返回的是成功的次数，还需除以2^32
-LL int ProbabilityFromDeltaXToDeltaY(bit32 deltaX,bit32 deltaY);
+//给定轮函数输入的ΔX，输出的ΔY，计算对应的概率。
+double ProbabilityFromDeltaXToDeltaY(bit32 deltaX,bit32 deltaY);
 
 //给定轮函数输入的ΔX，计算最大的概率。
-LL int MaxProbabilityFromDeltaX(bit32 deltaX);
+double MaxProbabilityFromDeltaX(bit32 deltaX);
 
-void MAINprocedure();
+void MAINprocedure(int totalRound);
+
+void firstRound(int round);
+
+void secondRound(int n);
+
+void Round(int now,int n);
+
+void lastRound(int n);
 
 #endif
